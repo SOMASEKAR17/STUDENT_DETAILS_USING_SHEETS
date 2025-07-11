@@ -5,12 +5,12 @@ const API_URL = import.meta.env.VITE_APP_URL;
 const SHEET_ID = import.meta.env.VITE_SHEET_ID;
 const SHEET_NAME = import.meta.env.VITE_SHEET_NAME;
 
-
 export default function App() {
   const [students, setStudents] = useState([]);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   const [formData, setFormData] = useState({
     "First Name": "",
     "Last Name": "",
@@ -76,8 +76,15 @@ export default function App() {
     }
   };
 
+  const filteredStudents = students.filter((student) =>
+    Object.values(student)
+      .join(" ")
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase())
+  );
+
   return (
-    <div className="p-4 max-w-4xl mx-auto relative">
+    <div className="p-4 max-w-6xl mx-auto relative">
       <h1 className="text-2xl mb-4 font-bold">Student Management</h1>
 
       {/* Toast Message */}
@@ -116,22 +123,60 @@ export default function App() {
         </button>
       </form>
 
-      {/* Student List */}
-      <div className="grid grid-cols-2 gap-4">
-        {students.map((student, index) => (
-          <div
-            key={index}
-            className="border p-4 rounded shadow cursor-pointer hover:bg-blue-50"
-            onClick={() => setSelectedStudent(student)}
-          >
-            <p>
-              <strong>
-                {student["First Name"]} {student["Last Name"]}
-              </strong>
-            </p>
-            <p className="text-sm text-gray-600 truncate">{student["Email ID"]}</p>
-          </div>
-        ))}
+      {/* Search Bar */}
+      <div className="mb-4">
+        <input
+          type="text"
+          placeholder="🔍 Search by any field"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full px-4 py-2 border rounded"
+        />
+      </div>
+
+      {/* Table View */}
+      <div className="overflow-x-auto">
+        <table className="min-w-full bg-white border">
+          <thead>
+            <tr className="bg-gray-200 text-left">
+              {[
+                "First Name",
+                "Last Name",
+                "Mobile Number",
+                "Email ID",
+                "Branch",
+                "Address",
+              ].map((header) => (
+                <th key={header} className="px-4 py-2 border">
+                  {header}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {filteredStudents.map((student, index) => (
+              <tr
+                key={index}
+                className="hover:bg-blue-50 cursor-pointer"
+                onClick={() => setSelectedStudent(student)}
+              >
+                <td className="px-4 py-2 border">{student["First Name"]}</td>
+                <td className="px-4 py-2 border">{student["Last Name"]}</td>
+                <td className="px-4 py-2 border">{student["Mobile Number"]}</td>
+                <td className="px-4 py-2 border">{student["Email ID"]}</td>
+                <td className="px-4 py-2 border">{student["Branch"]}</td>
+                <td className="px-4 py-2 border">{student["Address"]}</td>
+              </tr>
+            ))}
+            {filteredStudents.length === 0 && (
+              <tr>
+                <td colSpan={6} className="text-center py-4">
+                  No matching students found.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
 
       {/* Student Modal */}
