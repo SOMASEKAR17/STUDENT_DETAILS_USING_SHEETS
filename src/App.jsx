@@ -1,17 +1,16 @@
 import { useEffect, useState } from "react";
 import StudentModal from "./StudentModal";
 
-// Your deployed Apps Script Web App URL
-const API_URL =
-  "https://script.google.com/macros/s/AKfycbz9Mi5l-zs-v0xjZ26x0fYJHBkkhFX-_OSK3RU3s6OTo_iLbOKuYyYKe7T_U2obDIpERw/exec";
+const API_URL = import.meta.env.VITE_APP_URL;
+const SHEET_ID = import.meta.env.VITE_SHEET_ID;
+const SHEET_NAME = import.meta.env.VITE_SHEET_NAME;
 
-// Constants (you can hardcode or pass via env)
-const SHEET_ID = "1y7q3QW8Ibqzo5EFq2Ksloc5gP-TOsWrtQbeSRxntKTc";
-const SHEET_NAME = "Records";
 
 export default function App() {
   const [students, setStudents] = useState([]);
   const [selectedStudent, setSelectedStudent] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
   const [formData, setFormData] = useState({
     "First Name": "",
     "Last Name": "",
@@ -31,8 +30,7 @@ export default function App() {
       const rows = data.slice(1).map((row, i) =>
         Object.fromEntries(row.map((cell, j) => [headers[j], cell]))
       );
-      rows.forEach((student, index) => (student.__rowId = index + 1)); // row ID for Apps Script
-      setStudents(rows);
+      rows.forEach((student, index) => (student.__rowId = index + 1));
       setStudents(rows);
     } catch (err) {
       console.error("Fetch error:", err);
@@ -47,8 +45,14 @@ export default function App() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const showToast = (message) => {
+    setToastMessage(message);
+    setTimeout(() => setToastMessage(""), 3000);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
     try {
       const dataStr = encodeURIComponent(JSON.stringify(Object.values(formData)));
       await fetch(
@@ -62,15 +66,26 @@ export default function App() {
         "Branch": "",
         "Address": "",
       });
+      showToast("✅ Student created successfully!");
       fetchStudents();
     } catch (error) {
       console.error("Error submitting form:", error);
+      showToast("❌ Failed to create student");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="p-4 max-w-4xl mx-auto">
+    <div className="p-4 max-w-4xl mx-auto relative">
       <h1 className="text-2xl mb-4 font-bold">Student Management</h1>
+
+      {/* Toast Message */}
+      {toastMessage && (
+        <div className="fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded shadow">
+          {toastMessage}
+        </div>
+      )}
 
       {/* Create Student Form */}
       <form
@@ -92,9 +107,12 @@ export default function App() {
         ))}
         <button
           type="submit"
-          className="col-span-2 bg-blue-600 text-white py-2 rounded mt-2"
+          disabled={isSubmitting}
+          className={`col-span-2 text-white py-2 rounded mt-2 ${
+            isSubmitting ? "bg-blue-300" : "bg-blue-600"
+          }`}
         >
-          Create Student
+          {isSubmitting ? "Creating..." : "Create Student"}
         </button>
       </form>
 
@@ -116,13 +134,13 @@ export default function App() {
         ))}
       </div>
 
-      {/* Student Details Modal */}
+      {/* Student Modal */}
       {selectedStudent && (
         <StudentModal
           student={selectedStudent}
           onClose={() => {
             setSelectedStudent(null);
-            fetchStudents(); // refresh after editing
+            fetchStudents();
           }}
         />
       )}
