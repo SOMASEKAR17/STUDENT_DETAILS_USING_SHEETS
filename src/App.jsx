@@ -129,7 +129,7 @@ export default function App() {
                 {student["First Name"]} {student["Last Name"]}
               </strong>
             </p>
-            <p>{student["Email ID"]}</p>
+            <p className="text-sm text-gray-600 truncate">{student["Email ID"]}</p>
           </div>
         ))}
       </div>
